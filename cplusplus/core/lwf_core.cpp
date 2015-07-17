@@ -76,6 +76,8 @@ LWF::LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l)
 	intercepted = false;
 	needsUpdate = false;
 	m_needsUpdateForAttachLWF = false;
+	m_eventHandlersLocked = false;
+	m_shouldClearAllEventHandlers = false;
 	playing = true;
 	alive = true;
 	privateData = 0;

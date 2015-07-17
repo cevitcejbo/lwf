@@ -55,6 +55,8 @@ typedef map<int, bool> EventFunctions;
 typedef vector<int> RenderingModes;
 typedef function<shared_ptr<LWF> (string)> LWFLoader;
 typedef function<void ()> LWFUnloader;
+typedef vector<pair<int, int>> EventsToRemoveList;
+typedef vector<int> EventIDsToRemoveList;
 
 class LWF
 {
@@ -156,6 +158,10 @@ private:
 	bool m_fastForwardCurrent;
 	int m_fastForwardTimeout;
 	bool m_needsUpdateForAttachLWF;
+	bool m_eventHandlersLocked;
+	bool m_shouldClearAllEventHandlers;
+	EventsToRemoveList m_eventsToRemoveList;
+	EventIDsToRemoveList m_eventIDsToRemoveList;
 
 public:
 	LWF(shared_ptr<Data> d, shared_ptr<IRendererFactory> r, void *l = 0);
@@ -379,6 +385,8 @@ private:
 	const ColorTransform *CalcColorTransform(
 		const ColorTransform *colorTransform);
 	void LinkButton();
+	void lockEventHandlers();
+	void unlockEventHandlers();
 };
 
 }	// namespace LWF

@@ -97,6 +97,12 @@ void LWF::RemoveEventHandler(int eventId, int id)
 		return;
 	if (eventId < 0 || eventId >= (int)data->events.size())
 		return;
+	
+	if (m_eventHandlersLocked) {
+		m_eventsToRemoveList.push_back({eventId, id});
+		return;
+	}
+	
 	EventHandlerList &list = m_eventHandlers[eventId];
 	list.erase(remove_if(list.begin(), list.end(), Pred(id)), list.end());
 }
@@ -115,6 +121,12 @@ void LWF::ClearEventHandler(int eventId)
 {
 	if (eventId < 0 || eventId >= (int)data->events.size())
 		return;
+	
+	if (m_eventHandlersLocked) {
+		m_eventIDsToRemoveList.push_back(eventId);
+		return;
+	}
+	
 	m_eventHandlers[eventId].clear();
 }
 
@@ -147,8 +159,10 @@ void LWF::DispatchEvent(string eventName, Movie *m, Button *b)
 	if (list && !list->empty()) {
 		scoped_ptr<EventHandlerList> l(new EventHandlerList(*list));
 		EventHandlerList::iterator it(l->begin()), itend(l->end());
+		lockEventHandlers();
 		for (; it != itend; ++it)
 			it->second(m, b);
+		unlockEventHandlers();
 	}
 }
 
@@ -526,11 +540,48 @@ public:
 
 void LWF::ClearAllEventHandlers()
 {
-	m_eventHandlers.clear();
+	if (m_eventHandlersLocked)
+		m_shouldClearAllEventHandlers = true;
+	else
+		m_eventHandlers.clear();
+	
 	m_movieEventHandlers.clear();
 	m_buttonEventHandlers.clear();
 	InitEvent();
 	Inspect(ClearAllEventHandlersWrapper(), 0, 0, 0);
+}
+	
+void LWF::lockEventHandlers()
+{
+	m_eventHandlersLocked = true;
+}
+	
+void LWF::unlockEventHandlers()
+{
+	m_eventHandlersLocked = false;
+	
+	if (!m_eventsToRemoveList.empty()) {
+		EventsToRemoveList::const_iterator it(m_eventsToRemoveList.begin()),
+			itend(m_eventsToRemoveList.end());
+		for (; it != itend; ++it)
+			RemoveEventHandler(it->first, it->second);
+		
+		m_eventsToRemoveList.clear();
+	}
+	
+	if (!m_eventIDsToRemoveList.empty()) {
+		EventIDsToRemoveList::const_iterator it(m_eventIDsToRemoveList.begin()),
+			itend(m_eventIDsToRemoveList.end());
+		for (; it != itend; ++it)
+			ClearEventHandler(*it);
+		
+		m_eventIDsToRemoveList.clear();
+	}
+	
+	if (m_shouldClearAllEventHandlers) {
+		ClearAllEventHandlers();
+		m_shouldClearAllEventHandlers = false;
+	}
 }
 
 }	// namespace LWF

@@ -104,8 +104,10 @@ void LWF::PlayAnimation(int animationId, Movie *movie, Button *button)
 #endif
 				EventHandlerList &v(m_eventHandlers[eventId]);
 				EventHandlerList::iterator it(v.begin()), itend(v.end());
+				lockEventHandlers();
 				for (; it != itend; ++it)
 					it->second(movie, button);
+				unlockEventHandlers();
 			}
 			break;
 
